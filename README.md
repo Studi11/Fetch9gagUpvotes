@@ -4,6 +4,9 @@ This repo consists of 2 python scripts, getUpvoteLinks.py and downloadLinks.py.
 As the names imply the first one gathers links to the media of posts you upvoted and the second
 can then download those media files.
 
+In this README I'll show commands using pipenv because I used it here. Change commands correspondingly to
+your situation.
+
 ## Install
 Using pipenv execute `pipenv install`, the dependencies will get downloaded
 
