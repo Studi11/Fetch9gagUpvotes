@@ -15,6 +15,7 @@ from signal import signal, SIGINT
 
 
 posts = {}
+posts_file = ""
 
 
 def configure_driver():
@@ -92,7 +93,7 @@ def handler(a1, a2):
 def savePosts():
     global posts
     if posts:
-        with open("upvoted_posts.json", "w") as jfile:
+        with open(posts_file, "w") as jfile:
             json.dump(posts, jfile, indent=4)
 
 
@@ -122,8 +123,13 @@ if __name__ == '__main__':
 
     posts = {}
 
-    if os.path.exists("upvoted_posts.json"):
-        with open("upvoted_posts.json") as jfile:
+    if len(args)<3:
+        posts_file = "upvoted_posts.json"
+    else:
+        posts_file = args[2]+".json"
+
+    if os.path.exists(posts_file):
+        with open(posts_file) as jfile:
             posts = json.load(jfile)
             print("loaded posts file")
 
