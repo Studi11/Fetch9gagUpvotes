@@ -14,6 +14,10 @@ Additionally you'll have to have the correct chromedriver version installed.
 The version of your Chrome Browser has to be the same and can be checked by going to
 settings -> About
 
+Using pipenv you can execute `pipenv uninstall chromedriver-binary-auto` and then
+`pipenv install chromedriver-binary-auto` after having chrome installed or to update to a new
+chrome version.
+
 ### Dependencies
 - requests
 - selenium
@@ -37,6 +41,10 @@ An optional additional argument is the filename with links to use. The default `
 
 A second argument is the relative path to the folder the results get stored into. The default is
 `./download`
+
+## Usage run.sh
+This script will do everything for you, install dependencies, check for the right chromedriver and
+then run the other scripts with default arguments. It is mainly thought as reference.
 
 ## Todo:
 

@@ -12,6 +12,8 @@ import re
 import time
 import random
 from signal import signal, SIGINT
+import chromedriver_binary
+from fake_useragent import UserAgent
 
 
 posts = {}
@@ -24,38 +26,69 @@ def configure_driver():
     chrome_options = Options()
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("user-data-dir="+profile_dir)
+    ua = UserAgent()
+    userAgent = ua.random
+    chrome_options.add_argument(f"user-agent={userAgent}")
     driver = webdriver.Chrome(options=chrome_options)
     return driver
 
 def getSomeArticles(driver):
     global posts
 
-    soup = BeautifulSoup(driver.page_source, 'html.parser')
+    stream_list = []
+    article_list = []
 
-    stream_list = soup.find_all(id=re.compile('^stream-'))
-    
-    stream_list = list(map(lambda x: x['id'], stream_list))
-    print(f"streams {stream_list}")
+    def update():
+        nonlocal stream_list, article_list
+        soup = BeautifulSoup(driver.page_source, 'html.parser')
 
+        stream_list = soup.find_all(id=re.compile('^stream-'))
+        
+        stream_list = list(map(lambda x: x['id'], stream_list))
+        print(f"streams {stream_list}")
 
+        article_list = soup.find_all(id=re.compile('^jsid-post-'))
 
-    article_list = soup.find_all(id=re.compile('^jsid-post-'))
+    update()
 
-    for art in article_list:
+    art_i = 0
+    while True: # art_i in range(len(article_list)):
+        if art_i>=len(article_list):
+            break
+        art = article_list[art_i]
+        if art.header==None:
+            #print(f"article has no header\n{art}")
+            if art_i==0:
+                driver.execute_script("window.scrollBy(0,-window.innerHeight);")
+                print("scrolling up")
+                update()
+            else:
+                driver.execute_script("window.scrollBy(0,window.innerHeight);")
+                print("scrolling down")
+                update()
+            continue
+
         title = art.header.h1.contents[0]
 
-        link = art.picture
+        pc = art.findAll("div", {"class": "post-container"})[0]
+
+        link = pc.picture
+        #link = art.picture
         if link:
             link = link.img
         else:
-            link = art.video
+            link = pc.video
             if link!=None:
                 link = link.source
         # TODO: check for youtube link
         if not link:
-            print(f"article not recognised: {art}")
+            pc = pc.findAll("div", {"class": "youtube-post"})[0]
+            
+        if not link:
+            print(f"article not recognised: {art.prettify()}")
             with open("errors.txt", "a+") as errorfile:
                 errorfile.write(f"article not recognised:\n{art.prettify()}\n\n\n")
+            art_i += 1
             continue
         src = link['src']
         print(f"{title}\t\t{src}")
@@ -64,18 +97,21 @@ def getSomeArticles(driver):
             posts[src] = title
             savePosts()
 
+        art_i += 1
+
     driver.execute_script("window.scrollTo(0,document.body.scrollHeight);")
-    time.sleep(0.1+random.random()*0.7)
+    time.sleep(0.6+random.random()*0.9)
     
     for st in stream_list:
         driver.execute_script(f"var element = document.getElementById('{st}'); element.remove();")
-    
 
+    
 
 
     try:
         element = WebDriverWait(driver, 20).until(
-            EC.presence_of_element_located((By.TAG_NAME, "article"))
+            #EC.presence_of_element_located((By.TAG_NAME, "article"))
+            EC.presence_of_element_located((By.CLASS_NAME, "post-container"))
         )
     except Exception as ex:
         print(f"no stream found {ex}")
